@@ -5,7 +5,7 @@ import sys
 import time
 import Queue
 import Tkinter as tk    # Python Official GUI Library
-import tkMessageBox
+import tkMessageBox     # Python MessageBox GUI
 
 # ============ SYS ARG =============
 
@@ -124,48 +124,77 @@ class Client(tk.Frame):
                     Message = self.Recv_Queue.get()
                     Header = Message[0:5]
 
-                    # Connection Success
-                    if '[200]' in Header:
-                        pass
+                    # Basic Connection Signals are [20X], From 200 to 209
+                    if '[20' in Header:
+                        # Connection Success
+                        if '[200]' in Header:
+                            pass
 
-                    # Login Reply
-                    elif '[201]' in Header:
-                        self.button_1.config(state='normal')
-                        self.button_2.config(state='disabled')
-                        self.button_3.config(state='normal')
-                        self.button_4.config(state='normal')
-                        self.button_5.config(state='normal')
+                        # Login Reply
+                        elif '[201]' in Header:
+                            self.button_1.config(state='normal')
+                            self.button_2.config(state='disabled')
+                            self.button_3.config(state='normal')
+                            self.button_4.config(state='normal')
+                            self.button_5.config(state='normal')
 
-                    # UserList Update
-                    elif '[202]'in Header:
-                        UserList = Message[5:]
-                        self.listbox_1_cv.set(UserList)
+                        # UserList Update
+                        elif '[202]'in Header:
+                            UserList = Message[5:]
+                            self.listbox_1_cv.set(UserList)
 
-                    # Chatting Request
-                    elif '[203]'in Header:
-                        # start a new chatting window
-                        pass
+                        # Connection Query
+                        elif '[204]'in Header:
+                            # time.sleep(1)
+                            # self.Put_to_Send_Queue("[370]Connection alive")
+                            pass
 
-                    # Connection Query
-                    elif '[204]'in Header:
-                        # time.sleep(1)
-                        # self.Put_to_Send_Queue("[370]Connection alive")
-                        pass
+                        # Broadcast Msg
+                        elif '[205]'in Header:
+                            # Put Broadcast MSG on Board
+                            pass
 
-                    # Broadcast Msg
-                    elif '[205]'in Header:
-                        # Put Broadcast MSG on Board
-                        pass
+                        # .
+                        elif '[206]'in Header:
+                            pass
 
-                    # .
-                    elif '[206]'in Header:
-                        pass
+                        # Logout Msg From Server
+                        elif '[209]'in Header:
+                            tkMessageBox.showinfo('Sorry', 'Force Offline')
+                            self.button_1_handler()
 
-                    # Logout Msg From Server
-                    elif '[290]'in Header:
-                        tkMessageBox.showinfo('Sorry', 'Force Offline')
-                        self.button_1_handler()
+                    # Chat Signals are [21X], From 210 to 215
+                    elif '[21' in Header:
+                        # Chat Request Confirm
+                        if '[210]'in Header:
+                            pass
 
+                        # Chat Invite
+                        elif '[211]'in Header:
+                            Callee = (Message[5:]).rstrip().lstrip()
+                            # Ask Box
+                            # If no Refuse
+                            # self.Send_Queue.put('[311]'+self.username)
+                            # If yes Accept
+                            # self.Send_Queue.put('[312]'+self.username)
+
+                        # Chat Invite Refused
+                        elif '[212]'in Header:
+                            Callee = (Message[5:]).rstrip().lstrip()
+                            tkMessageBox.showinfo('Sorry', Callee+' Refused Chat')
+
+                        # Chat Invite Accepted
+                        elif '[213]'in Header:
+                            PeerName = (Message[5:]).rstrip().lstrip()
+                            print PeerName
+
+                        # Chat Msg
+                        elif '[214]'in Header:
+                            pass
+
+                        # Chat Terminate Request
+                        elif '[215]'in Header:
+                            pass
                 else:
                     time.sleep(0.1)
 
