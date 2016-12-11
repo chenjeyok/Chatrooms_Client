@@ -5,7 +5,7 @@ import sys
 import time
 import Queue
 import Tkinter as tk    # Python Official GUI Library
-import ttk              # Tkinter GUI V8.5 After
+import ttk              # Tkinter V8.5 After
 import tkMessageBox     # Python MessageBox GUI
 
 # ============ SYS ARG =============
@@ -197,21 +197,17 @@ class Client(tk.Frame):
                             Pos = Message.index(':')
                             Content = Message[Pos+1:]
                             PeerName = (Message[5:Pos]).rstrip().lstrip()
-                            print '[DB8]'+PeerName+''+Content
-                            if PeerName in self.ChatList.keys():
-                                self.ChatList[PeerName].ChatContent.set('<'+PeerName+'> '+Content)
-                            else:
-                                self.Send_Queue.put('[215]'+PeerName)
+                            print '[Pos]'+str(Pos)
+                            print '[Cnt]'+Content
+                            print '[Per]'+PeerName
+                            self.ChatList[PeerName].ChatContent.set(PeerName+'>'+Content)
 
                         # Chat Terminate Request
                         elif '[215]'in Header:
                             PeerName = (Message[5:]).rstrip().lstrip()
-                            if PeerName in self.ChatList.keys():
-                                self.ChatPane.forget(self.ChatList[PeerName])
-                                self.ChatList.pop(PeerName)
-                                tkMessageBox.showinfo(PeerName, PeerName+' Quit Chat')
-                            else:
-                                print '[DB7] User not in Chat'
+                            print '[DB5]'+PeerName
+                            self.ChatPane.forget(self.ChatList[PeerName])
+                            tkMessageBox.showinfo(PeerName, PeerName+' Quit Chat')
                 else:
                     time.sleep(0.1)
 
@@ -232,16 +228,7 @@ class Client(tk.Frame):
 
     # Button 1  Logout
     def button_1_handler(self):
-        # Close Chat Tabs
-        # Remove myself from others' ChatList
-        for PeerName in self.ChatList.keys():
-            self.Send_Queue.put('[314]'+PeerName)
-            self.ChatPane.forget(self.ChatList[PeerName])
-            self.ChatList.pop(PeerName)
-            time.sleep(0.1)
-        # Notify server the Logout
         self.Send_Queue.put('[390]Logout:'+self.username)
-
         self.button_1.config(state='disabled')
         self.button_2.config(state='normal')
         self.button_3.config(state='disabled')
@@ -271,20 +258,18 @@ class Client(tk.Frame):
 
     # Button 4
     def button_4_handler(self):
-        tkMessageBox.showinfo('Sorry', 'Didn\'t decide what to do with this button yet.')
+        pass
 
     # Button 5 Chat Request
     def button_5_handler(self):
         try:
             choose_index = self.listbox_1.curselection()[0]
-            PeerName = self.listbox_1.get(choose_index)
-            if PeerName == self.username:
-                print '[B05] Not to yourself,', PeerName
-            elif PeerName in self.ChatList.keys():
-                print '[B05] In Chat With', PeerName
+            peername = self.listbox_1.get(choose_index)
+            if peername != self.username:
+                self.Send_Queue.put('[310]'+peername)
+                print '[B05] Chat Request', peername
             else:
-                self.Send_Queue.put('[310]'+PeerName)
-                print '[B05] Chat Request', PeerName
+                print '[B05] Not to yourself,', peername
         except Exception, emsg:
             print '[450] B05 ', str(emsg)
 
@@ -296,17 +281,12 @@ class Client(tk.Frame):
 
     def Button_Send_handler(self, PeerName):
         Content = self.ChatList[PeerName].entry.get()
-        self.ChatList[PeerName].entry.delete(0, 50)
-        if len(Content) > 0:
-            self.Send_Queue.put('[313]'+PeerName+':'+Content)
-            print '[DB0]'+Content
-        else:
-            print '[DB0]'+' Empty Content'
+        self.Send_Queue.put('[313]'+PeerName+':'+Content)
+        print '[DB0]'+Content
 
     def Button_Term_handler(self, PeerName):
         # close PeerName Tab
         self.ChatPane.forget(self.ChatList[PeerName])
-        self.ChatList.pop(PeerName)
         # Send terminate request
         self.Send_Queue.put('[314]'+PeerName)
 
@@ -382,13 +362,13 @@ class Client(tk.Frame):
         Frame.labelFrame_3_2 = tk.LabelFrame(Frame)
 
         Frame.textWindow = tk.Label(Frame.labelFrame_3_1, width=48, height=16, textvariable=Frame.ChatContent)
-        Frame.button_A = tk.Button(Frame.labelFrame_3_2, text='B7', width=9)
-        Frame.button_B = tk.Button(Frame.labelFrame_3_2, text='B8', width=9)
-        Frame.button_C = tk.Button(Frame.labelFrame_3_2, text='B9', width=9)
+        Frame.button_A = tk.Button(Frame.labelFrame_3_2, text='A', width=9)
+        Frame.button_B = tk.Button(Frame.labelFrame_3_2, text='B', width=9)
+        Frame.button_C = tk.Button(Frame.labelFrame_3_2, text='C', width=9)
         Frame.Button_T = tk.Button(Frame.labelFrame_3_2, text='Terminate', command=lambda: self.Button_Term_handler(Frame.PeerName), width=9)
         Frame.entry = tk.Entry(Frame.labelFrame_3_2, width=35)
-        # Frame.entry.bind('<Return>', lambda: self.Button_Send_handler(Frame.PeerName))
         Frame.send = tk.Button(Frame.labelFrame_3_2, text='Send', command=lambda: self.Button_Send_handler(Frame.PeerName), width=5)
+        Frame.send.bind('<Return>', self.Button_Send_handler)
 
         Frame.labelFrame_3_1.grid(row=0, column=0, sticky=tk.N)
         Frame.labelFrame_3_2.grid(row=1, column=0, sticky=tk.S)  # , sticky=tk.W)
