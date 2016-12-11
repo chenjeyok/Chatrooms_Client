@@ -5,6 +5,7 @@ import sys
 import time
 import Queue
 import Tkinter as tk    # Python Official GUI Library
+import ttk              # Tkinter V8.5 After
 import tkMessageBox     # Python MessageBox GUI
 
 # ============ SYS ARG =============
@@ -28,6 +29,7 @@ class Client(tk.Frame):
             # Initialize GUI Widgets
             self.CreateLogin()
             self.CreateUserList()
+            self.CreateChatList()
 
             # Initialize Sockets
             self.CreateSocket()
@@ -137,6 +139,7 @@ class Client(tk.Frame):
                             self.button_3.config(state='normal')
                             self.button_4.config(state='normal')
                             self.button_5.config(state='normal')
+                            self.ChatPane.tab(0, text=self.username)
 
                         # UserList Update
                         elif '[202]'in Header:
@@ -160,7 +163,7 @@ class Client(tk.Frame):
 
                         # Logout Msg From Server
                         elif '[209]'in Header:
-                            tkMessageBox.showinfo('Sorry', 'Force Offline')
+                            tkMessageBox.showinfo('Sorry', 'You\'re fored to be offline because the Server asked you to')
                             self.button_1_handler()
 
                     # Chat Signals are [21X], From 210 to 215
@@ -171,30 +174,40 @@ class Client(tk.Frame):
 
                         # Chat Invite
                         elif '[211]'in Header:
-                            Callee = (Message[5:]).rstrip().lstrip()
-                            # Ask Box
-                            # If no Refuse
-                            # self.Send_Queue.put('[311]'+self.username)
-                            # If yes Accept
-                            # self.Send_Queue.put('[312]'+self.username)
+                            Caller = (Message[5:]).rstrip().lstrip()
+                            Answer = tkMessageBox.askquestion(title=Caller, message='Hi, '+self.username+'\nWhat about a chat with me?')
+                            if 'no' in Answer:
+                                self.Send_Queue.put('[311]'+Caller)
+                            elif 'yes' in Answer:
+                                self.Send_Queue.put('[312]'+Caller)
 
                         # Chat Invite Refused
                         elif '[212]'in Header:
                             Callee = (Message[5:]).rstrip().lstrip()
-                            tkMessageBox.showinfo('Sorry', Callee+' Refused Chat')
+                            tkMessageBox.showinfo(Callee, 'Refused your sincere offer to waste the lonely night together.\nTry another one :)')
 
                         # Chat Invite Accepted
                         elif '[213]'in Header:
                             PeerName = (Message[5:]).rstrip().lstrip()
-                            print PeerName
+                            print '[DB9]'+PeerName
+                            self.CreateChatTab(PeerName)
 
                         # Chat Msg
                         elif '[214]'in Header:
-                            pass
+                            Pos = Message.index(':')
+                            Content = Message[Pos+1:]
+                            PeerName = (Message[5:Pos]).rstrip().lstrip()
+                            print '[Pos]'+str(Pos)
+                            print '[Cnt]'+Content
+                            print '[Per]'+PeerName
+                            self.ChatList[PeerName].ChatContent.set(PeerName+'>'+Content)
 
                         # Chat Terminate Request
                         elif '[215]'in Header:
-                            pass
+                            PeerName = (Message[5:]).rstrip().lstrip()
+                            print '[DB5]'+PeerName
+                            self.ChatPane.forget(self.ChatList[PeerName])
+                            tkMessageBox.showinfo(PeerName, PeerName+' Quit Chat')
                 else:
                     time.sleep(0.1)
 
@@ -209,7 +222,7 @@ class Client(tk.Frame):
         try:
             self.CreateSocket()
         except:
-            tkMessageBox.showinfo('Sorry', 'Server Closed, Quiting')
+            tkMessageBox.showinfo('Sorry', 'It\'s late at night and the Bar is closed, Quiting')
             self.sock.close()
             self.quit()
 
@@ -223,11 +236,6 @@ class Client(tk.Frame):
         self.button_5.config(state='disabled')
         self.listbox_1_cv.set('')
         print '[B01] Logout'
-
-    # Button 1 Mouse Enter Handler
-    # Event Handler takes 2 args:(self, event)
-    def button_1_enter_handler(self, event):
-        pass
 
     # Button 2 User Login
     def button_2_handler(self):
@@ -268,59 +276,110 @@ class Client(tk.Frame):
     # Button 5 Quit
     def button_6_handler(self):
         print '[B06] Quit...'
-        # self.Send_Queue.put('[390]Logout:'+self.username)
         self.sock.close()
         self.quit()
 
-    # Entry 2 Password Return Handler
-    def entry_2_return_handler(self, event):
-        print '[Ret] Password ', self.entry_2.get()
-        self.entry_2.delete(first=0, last=50)
+    def Button_Send_handler(self, PeerName):
+        Content = self.ChatList[PeerName].entry.get()
+        self.Send_Queue.put('[313]'+PeerName+':'+Content)
+        print '[DB0]'+Content
+
+    def Button_Term_handler(self, PeerName):
+        # close PeerName Tab
+        self.ChatPane.forget(self.ChatList[PeerName])
+        # Send terminate request
+        self.Send_Queue.put('[314]'+PeerName)
 
     # Login Frame GUI
     def CreateLogin(self):
-        self.labelFrame_1 = tk.LabelFrame(self, text='Label 1 Login', width=500, height=50)
-        self.labelFrame_1.grid(row=0, column=0, rowspan=1, columnspan=2)
+        self.labelFrame_1 = tk.LabelFrame(self, text='Label 1 Login')  # , width=50, height=50)
+        self.labelFrame_1.grid(row=0, column=0, rowspan=1, columnspan=2, sticky=tk.N+tk.W, pady=0, padx=4)
         # label_acc
-        self.label_acc = tk.Label(self.labelFrame_1, text='Username', width=15, height=1)
+        self.label_acc = tk.Label(self.labelFrame_1, text='Username', width=10, height=1)
         self.label_acc.grid(row=0, column=0, rowspan=1, columnspan=1)
         # label_pas
-        self.label_pas = tk.Label(self.labelFrame_1, text='Password', width=15, height=1)
+        self.label_pas = tk.Label(self.labelFrame_1, text='Password', width=10, height=1)
         self.label_pas.grid(row=1, column=0, rowspan=1, columnspan=1)
         # Entry 1 Username Entry
         self.entry_1 = tk.Entry(self.labelFrame_1, text='E1 Username', width=20)
         self.entry_1.grid(row=0, column=1, rowspan=1, columnspan=1)
         # Entry 2 Password Entry
         self.entry_2 = tk.Entry(self.labelFrame_1, text='E2 Password', width=20, show='*')
-        self.entry_2.bind('<Return>', self.entry_2_return_handler)
         self.entry_2.grid(row=1, column=1, rowspan=1, columnspan=1)
         # Button 1 Logout
-        self.button_1 = tk.Button(self.labelFrame_1, text='B1 Logout', command=self.button_1_handler, width=15, height=3, state='disabled')
-        self.button_1.bind('<Enter>', self.button_1_enter_handler)
+        self.button_1 = tk.Button(self.labelFrame_1, text='B1 Logout', command=self.button_1_handler, width=10, height=1, state='disabled')
         self.button_1.grid(row=2, column=0, rowspan=1, columnspan=1)
         # Button 2 Login
-        self.button_2 = tk.Button(self.labelFrame_1, text='B2 Login', command=self.button_2_handler, width=15, height=3)
+        self.button_2 = tk.Button(self.labelFrame_1, text='B2 Login', command=self.button_2_handler, width=10, height=1)
         self.button_2.grid(row=2, column=1, rowspan=1, columnspan=1 )
 
     def CreateUserList(self):
-        self.labelFrame_2 = tk.LabelFrame(self, text='Label 2 Users', width=500, height=200)
-        self.labelFrame_2.grid(row=1, column=0, rowspan=1, columnspan=2)
+        self.labelFrame_2 = tk.LabelFrame(self, text='Label 2 Users')
+        self.labelFrame_2.grid(row=1, column=0, rowspan=1, columnspan=2, sticky=tk.W, pady=4, padx=4)
         # Listbox 1 Users Online
         self.listbox_1_cv = tk.StringVar()
-        self.listbox_1 = tk.Listbox(self.labelFrame_2, width=20, height=15, listvariable=self.listbox_1_cv)
-        self.listbox_1.grid(row=0, column=0, rowspan=4, columnspan=1)
+        self.listbox_1 = tk.Listbox(self.labelFrame_2, width=20, height=16, listvariable=self.listbox_1_cv)
+        self.listbox_1.grid(row=0, column=0, rowspan=4, columnspan=1, padx=2, pady=4)
         # Button 3 UserList Query
-        self.button_3 = tk.Button(self.labelFrame_2, text='B3 Show Users', command=self.button_3_handler, width=15, height=3, state='disabled')
-        self.button_3.grid(row=0, column=1, rowspan=1, columnspan=1)
+        self.button_3 = tk.Button(self.labelFrame_2, text='B3 Show Users', command=self.button_3_handler, width=10, height=1, state='disabled')
+        self.button_3.grid(row=0, column=1, rowspan=1, columnspan=1, padx=2)
         # Button 4
-        self.button_4 = tk.Button(self.labelFrame_2, text='B4 Clear Users', command=self.button_4_handler, width=15, height=3, state='disabled')
+        self.button_4 = tk.Button(self.labelFrame_2, text='B4 Clear Users', command=self.button_4_handler, width=10, height=1, state='disabled')
         self.button_4.grid(row=1, column=1, rowspan=1, columnspan=1)
         # Button 5 Chat with
-        self.button_5 = tk.Button(self.labelFrame_2, text='B5 Chat With', command=self.button_5_handler, width=15, height=3, state='disabled')
+        self.button_5 = tk.Button(self.labelFrame_2, text='B5 Chat With', command=self.button_5_handler, width=10, height=1, state='disabled')
         self.button_5.grid(row=2, column=1, rowspan=1, columnspan=1)
         # Button 6 Quit
-        self.button_6 = tk.Button(self.labelFrame_2, text='B6 Quit App', command=self.button_6_handler, width=15, height=3)
+        self.button_6 = tk.Button(self.labelFrame_2, text='B6 Quit App', command=self.button_6_handler, width=10, height=1)
         self.button_6.grid(row=3, column=1, rowspan=1, columnspan=1)
+
+    def CreateChatList(self):
+        # self.Sep = ttk.Separator(orient=tk.VERTICAL)
+        # self.Sep.grid(row=0, column=2, rowspan=2, columnspan=1)
+        self.ChatList={}
+
+        self.labelFrame_3 = tk.LabelFrame(self, text='Label 3 Chats')
+        self.labelFrame_3.grid(row=0, column=2, rowspan=2, columnspan=6, sticky=tk.N, pady=4, padx=4)
+
+        self.ChatPane = ttk.Notebook(self.labelFrame_3, width=450, height=335)
+        self.ChatPane.grid(row=0, column=0, rowspan=2, columnspan=6, sticky=tk.N, pady=2, padx=2)
+
+        self.NewUserTab = tk.Frame()  # Later Use a class to wrap this Frame as a chat box
+        self.ChatPane.add(self.NewUserTab, text='New User')
+
+    def CreateChatTab(self, PeerName):
+        self.ChatList[PeerName] = tk.Frame()  # Later Use a class to wrap this Frame as a chat box
+        self.AddWidgetsToFrame(self.ChatList[PeerName], PeerName)
+        self.ChatPane.add(self.ChatList[PeerName], text=PeerName)
+
+    def AddWidgetsToFrame(self, Frame, PeerName):
+        Frame.PeerName = PeerName
+        Frame.ChatContent = tk.StringVar()
+        Frame.s = ''
+        Frame.ChatContent.set(Frame.s)
+
+        Frame.labelFrame_3_1 = tk.LabelFrame(Frame)
+        Frame.labelFrame_3_2 = tk.LabelFrame(Frame)
+
+        Frame.textWindow = tk.Label(Frame.labelFrame_3_1, width=48, height=16, textvariable=Frame.ChatContent)
+        Frame.button_A = tk.Button(Frame.labelFrame_3_2, text='A', width=9)
+        Frame.button_B = tk.Button(Frame.labelFrame_3_2, text='B', width=9)
+        Frame.button_C = tk.Button(Frame.labelFrame_3_2, text='C', width=9)
+        Frame.Button_T = tk.Button(Frame.labelFrame_3_2, text='Terminate', command=lambda: self.Button_Term_handler(Frame.PeerName), width=9)
+        Frame.entry = tk.Entry(Frame.labelFrame_3_2, width=35)
+        Frame.send = tk.Button(Frame.labelFrame_3_2, text='Send', command=lambda: self.Button_Send_handler(Frame.PeerName), width=5)
+        Frame.send.bind('<Return>', self.Button_Send_handler)
+
+        Frame.labelFrame_3_1.grid(row=0, column=0, sticky=tk.N)
+        Frame.labelFrame_3_2.grid(row=1, column=0, sticky=tk.S)  # , sticky=tk.W)
+
+        Frame.textWindow.grid(row=0, column=0, rowspan=1, columnspan=2, padx=4, pady=0)
+        Frame.button_A.grid(row=0, column=0)
+        Frame.button_B.grid(row=0, column=1)
+        Frame.button_C.grid(row=0, column=2)
+        Frame.Button_T.grid(row=0, column=3)
+        Frame.entry.grid(row=1, column=0, columnspan=3)
+        Frame.send.grid(row=1, column=3, columnspan=1)
 
 # Main Thread
 C1 = Client()
