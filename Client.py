@@ -199,7 +199,8 @@ class Client(tk.Frame):
                             PeerName = (Message[5:Pos]).rstrip().lstrip()
                             print '[DB8]'+PeerName+''+Content
                             if PeerName in self.ChatList.keys():
-                                self.ChatList[PeerName].ChatContent.set('<'+PeerName+'> '+Content)
+                                self.CreateScreen('<'+PeerName+'> '+time.strftime('%b-%d %H:%M', time.localtime(time.time())), PeerName)
+                                self.CreateScreen('     '+Content, PeerName)
                             else:
                                 self.Send_Queue.put('[215]'+PeerName)
 
@@ -240,7 +241,7 @@ class Client(tk.Frame):
             self.ChatList.pop(PeerName)
             time.sleep(0.1)
         # Notify server the Logout
-        self.Send_Queue.put('[390]Logout:'+self.username)
+        self.Send_Queue.put('[390]'+self.username)
 
         self.button_1.config(state='disabled')
         self.button_2.config(state='normal')
@@ -253,15 +254,18 @@ class Client(tk.Frame):
     # Button 2 User Login
     def button_2_handler(self):
         self.username = self.entry_1.get()
+        self.password = self.entry_2.get()
         if ':' in self.username:
             print '[B02] Username illegal with : '
         elif ' ' in self.username:
             print '[B02] Username illegal with blankspace'
         elif len(self.username) not in range(5, 20):
             print '[B02] Username too short or too long'
+        elif len(self.username) == 0:
+            print '[B02] Password empty'
         else:
             # send username to login
-            self.Send_Queue.put('[300]'+self.username)
+            self.Send_Queue.put('[300]'+self.username+':'+self.password)
             print '[B02] Login Request:', self.username
 
     # Button 3 User List Query
@@ -288,17 +292,32 @@ class Client(tk.Frame):
         except Exception, emsg:
             print '[450] B05 ', str(emsg)
 
-    # Button 5 Quit
+    # Button 6 Quit
     def button_6_handler(self):
         print '[B06] Quit...'
+        self.Lock = True
         self.sock.close()
         self.quit()
+
+    # Button 7
+    def button_7_handler(self):
+        tkMessageBox.showinfo('Sorry', 'File Transmit Utility Under Developing')
+
+    # Button 8
+    def button_8_handler(self):
+        tkMessageBox.showinfo('Sorry', 'Voice Utility Under Developing')
+
+    # Button 9
+    def button_9_handler(self):
+        tkMessageBox.showinfo('Sorry', 'Didn\'t decide what to do with this button yet.')
 
     def Button_Send_handler(self, PeerName):
         Content = self.ChatList[PeerName].entry.get()
         self.ChatList[PeerName].entry.delete(0, 50)
         if len(Content) > 0:
             self.Send_Queue.put('[313]'+PeerName+':'+Content)
+            self.CreateScreen('<'+self.username+'> '+time.strftime('%b-%d %H:%M', time.localtime(time.time())), PeerName)
+            self.CreateScreen('    '+Content, PeerName)
             print '[DB0]'+Content
         else:
             print '[DB0]'+' Empty Content'
@@ -344,7 +363,7 @@ class Client(tk.Frame):
         self.button_3 = tk.Button(self.labelFrame_2, text='B3 Show Users', command=self.button_3_handler, width=10, height=1, state='disabled')
         self.button_3.grid(row=0, column=1, rowspan=1, columnspan=1, padx=2)
         # Button 4
-        self.button_4 = tk.Button(self.labelFrame_2, text='B4 Clear Users', command=self.button_4_handler, width=10, height=1, state='disabled')
+        self.button_4 = tk.Button(self.labelFrame_2, text='B4 ', command=self.button_4_handler, width=10, height=1, state='disabled')
         self.button_4.grid(row=1, column=1, rowspan=1, columnspan=1)
         # Button 5 Chat with
         self.button_5 = tk.Button(self.labelFrame_2, text='B5 Chat With', command=self.button_5_handler, width=10, height=1, state='disabled')
@@ -371,20 +390,37 @@ class Client(tk.Frame):
         self.ChatList[PeerName] = tk.Frame()  # Later Use a class to wrap this Frame as a chat box
         self.AddWidgetsToFrame(self.ChatList[PeerName], PeerName)
         self.ChatPane.add(self.ChatList[PeerName], text=PeerName)
+        self.ChatPane.select(self.ChatList[PeerName])
+
+    def CreateScreen(self, Content, PeerName):
+        try:
+            length = len(self.ChatList[PeerName].ScreenList)
+            self.ChatList[PeerName].ScreenList.append(Content)
+            if length > 15:
+                CurrentList = self.ChatList[PeerName].ScreenList[-16:]
+            else:
+                CurrentList = self.ChatList[PeerName].ScreenList
+            ScreenString = ''
+            for line in CurrentList:
+                ScreenString = ScreenString + line + '\n'
+            self.ChatList[PeerName].ChatContent.set(ScreenString)
+        except Exception, emsg:
+            print '[455] SCR ', str(emsg)
 
     def AddWidgetsToFrame(self, Frame, PeerName):
         Frame.PeerName = PeerName
         Frame.ChatContent = tk.StringVar()
-        Frame.s = ''
-        Frame.ChatContent.set(Frame.s)
+        Frame.ScreenList = ['Entered Room, Now You Can Start']
+        Frame.ScreenString = 'Entered Room, Now You Can Start'
+        Frame.ChatContent.set(Frame.ScreenString)
 
         Frame.labelFrame_3_1 = tk.LabelFrame(Frame)
         Frame.labelFrame_3_2 = tk.LabelFrame(Frame)
 
-        Frame.textWindow = tk.Label(Frame.labelFrame_3_1, width=48, height=16, textvariable=Frame.ChatContent)
-        Frame.button_A = tk.Button(Frame.labelFrame_3_2, text='B7', width=9)
-        Frame.button_B = tk.Button(Frame.labelFrame_3_2, text='B8', width=9)
-        Frame.button_C = tk.Button(Frame.labelFrame_3_2, text='B9', width=9)
+        Frame.textWindow = tk.Label(Frame.labelFrame_3_1, width=48, height=16, textvariable=Frame.ChatContent, anchor=tk.NW, justify="left")
+        Frame.button_7 = tk.Button(Frame.labelFrame_3_2, text='B7 File  ', width=9, command=self.button_7_handler)
+        Frame.button_8 = tk.Button(Frame.labelFrame_3_2, text='B8 Voice ', width=9, command=self.button_8_handler)
+        Frame.button_9 = tk.Button(Frame.labelFrame_3_2, text='B9       ', width=9, command=self.button_9_handler)
         Frame.Button_T = tk.Button(Frame.labelFrame_3_2, text='Terminate', command=lambda: self.Button_Term_handler(Frame.PeerName), width=9)
         Frame.entry = tk.Entry(Frame.labelFrame_3_2, width=35)
         # Frame.entry.bind('<Return>', lambda: self.Button_Send_handler(Frame.PeerName))
@@ -394,9 +430,9 @@ class Client(tk.Frame):
         Frame.labelFrame_3_2.grid(row=1, column=0, sticky=tk.S)  # , sticky=tk.W)
 
         Frame.textWindow.grid(row=0, column=0, rowspan=1, columnspan=2, padx=4, pady=0)
-        Frame.button_A.grid(row=0, column=0)
-        Frame.button_B.grid(row=0, column=1)
-        Frame.button_C.grid(row=0, column=2)
+        Frame.button_7.grid(row=0, column=0)
+        Frame.button_8.grid(row=0, column=1)
+        Frame.button_9.grid(row=0, column=2)
         Frame.Button_T.grid(row=0, column=3)
         Frame.entry.grid(row=1, column=0, columnspan=3)
         Frame.send.grid(row=1, column=3, columnspan=1)
