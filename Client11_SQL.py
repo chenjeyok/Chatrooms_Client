@@ -99,7 +99,7 @@ class Client(tk.Frame):
         return
 
     def CreateReceiv(self):
-        print '[002] Receiver thread start'
+        print '[002] Receive thread start'
         self.Recv_Queue = Queue.Queue()
         while True:
             try:
@@ -456,5 +456,5 @@ class Client(tk.Frame):
 # Main Thread
 C1 = Client()
 C1.master.title('Chatting Rooms Client')
-print '[004] Local button thread start'
+print '[004] Local button monitor thread start'
 C1.mainloop()

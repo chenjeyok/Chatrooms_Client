@@ -17,8 +17,7 @@ if(len(sys.argv) < 3):
 HOST = sys.argv[1]
 PORT = int(sys.argv[2])
 
-
-# ========== CLIENT INIT ===========
+# ==================================
 
 
 class Client(tk.Frame):
@@ -44,22 +43,15 @@ class Client(tk.Frame):
         except Exception, emsg:
             print '[401]Init', str(emsg)
 
-
-# ========== SOCKET INIT ===========
-
     def CreateSocket(self):
         try:
             self.sock = socket.socket(socket.AF_INET, socket.SOCK_STREAM)
             self.sock.settimeout(100)  # Related to broken socket judgement
             self.sock.connect((HOST, PORT))
-            print "[000] Connected to server"
+            print "[000]Connected to server"
         except:
-            print "[400] Unable to connect"
-            tkMessageBox.showinfo('Sorry', 'Unable to connect to Sever')
-            self.quit()
-
-
-# ========== THREADS ===========
+            print "[400]Unable to connect"
+            raise
 
     def CreateThreads(self):
 
@@ -99,7 +91,7 @@ class Client(tk.Frame):
         return
 
     def CreateReceiv(self):
-        print '[002] Receiver thread start'
+        print '[002] Receive thread start'
         self.Recv_Queue = Queue.Queue()
         while True:
             try:
@@ -230,8 +222,6 @@ class Client(tk.Frame):
         print '[459] Msg Handler down'
         return
 
-# ========== UTILITY FUNCTIONS ===========
-
     # Reconnect to server when wrong with socket
     def Reconnect(self):
         try:
@@ -240,9 +230,6 @@ class Client(tk.Frame):
             tkMessageBox.showinfo('Sorry', 'It\'s late at night and the Bar is closed, Quiting')
             self.sock.close()
             self.quit()
-
-
-# ========== GUI REACT FUNCTIONS ===========
 
     # Button 1  Logout
     def button_1_handler(self):
@@ -264,7 +251,7 @@ class Client(tk.Frame):
         self.listbox_1_cv.set('')
         print '[B01] Logout'
 
-    # Button 2 Login
+    # Button 2 User Login
     def button_2_handler(self):
         self.username = self.entry_1.get()
         self.password = self.entry_2.get()
@@ -274,7 +261,7 @@ class Client(tk.Frame):
             print '[B02] Username illegal with blankspace'
         elif len(self.username) not in range(5, 20):
             print '[B02] Username too short or too long'
-        elif len(self.password) == 0:
+        elif len(self.username) == 0:
             print '[B02] Password empty'
         else:
             # send username to login
@@ -342,9 +329,6 @@ class Client(tk.Frame):
         # Send terminate request
         self.Send_Queue.put('[314]'+PeerName)
 
-
-# ========== GUI INIT ===========
-
     # Login Frame GUI
     def CreateLogin(self):
         self.labelFrame_1 = tk.LabelFrame(self, text='Label 1 Login')  # , width=50, height=50)
@@ -389,7 +373,9 @@ class Client(tk.Frame):
         self.button_6.grid(row=3, column=1, rowspan=1, columnspan=1)
 
     def CreateChatList(self):
-        self.ChatList = {}
+        # self.Sep = ttk.Separator(orient=tk.VERTICAL)
+        # self.Sep.grid(row=0, column=2, rowspan=2, columnspan=1)
+        self.ChatList={}
 
         self.labelFrame_3 = tk.LabelFrame(self, text='Label 3 Chats')
         self.labelFrame_3.grid(row=0, column=2, rowspan=2, columnspan=6, sticky=tk.N, pady=4, padx=4)
@@ -451,10 +437,7 @@ class Client(tk.Frame):
         Frame.entry.grid(row=1, column=0, columnspan=3)
         Frame.send.grid(row=1, column=3, columnspan=1)
 
-
-# ========== START ===========
 # Main Thread
 C1 = Client()
 C1.master.title('Chatting Rooms Client')
-print '[004] Local button thread start'
 C1.mainloop()
