@@ -281,13 +281,17 @@ class Client(tk.Frame):
             self.Send_Queue.put('[300]'+self.username+':'+self.password)
             print '[B02] Login Request:', self.username
 
-    # Button 3 User List Query
+    # Button 3
     def button_3_handler(self):
-        self.Send_Queue.put('[350]User List Request')
-        print '[B03] Show users'
+        # This is a debug buttion in developing version
+        # self.Send_Queue.put('[350]User List Request')
+        print '[B03] User List Debug'
+        tkMessageBox.showinfo('Sorry', 'This is a debug buttion in developing version, and is functionally removed for now')
+
 
     # Button 4
     def button_4_handler(self):
+        print '[B04] B4 Pressed'
         tkMessageBox.showinfo('Sorry', 'Didn\'t decide what to do with this button yet.')
 
     # Button 5 Chat Request
@@ -376,7 +380,7 @@ class Client(tk.Frame):
         self.listbox_1 = tk.Listbox(self.labelFrame_2, width=20, height=16, listvariable=self.listbox_1_cv)
         self.listbox_1.grid(row=0, column=0, rowspan=4, columnspan=1, padx=2, pady=4)
         # Button 3 UserList Query
-        self.button_3 = tk.Button(self.labelFrame_2, text='B3 Show Users', command=self.button_3_handler, width=10, height=1, state='disabled')
+        self.button_3 = tk.Button(self.labelFrame_2, text='B3 ', command=self.button_3_handler, width=10, height=1, state='disabled')
         self.button_3.grid(row=0, column=1, rowspan=1, columnspan=1, padx=2)
         # Button 4
         self.button_4 = tk.Button(self.labelFrame_2, text='B4 ', command=self.button_4_handler, width=10, height=1, state='disabled')
@@ -399,6 +403,31 @@ class Client(tk.Frame):
 
         self.NewUserTab = tk.Frame()  # Later Use a class to wrap this Frame as a chat box
         self.ChatPane.add(self.NewUserTab, text='New User')
+
+        self.NewUserTab.UsageContent = 'Welcome to Chatting Rooms, following are the Quick Tutorial:\n\n'
+        self.NewUserTab.UsageContent += '<Login> This is ther login frame:\n'
+        self.NewUserTab.UsageContent += '\t<B2 Login> Send Login Request\n'
+        self.NewUserTab.UsageContent += '\t<B1 Logout> Send Logout Request\n\n'
+        self.NewUserTab.UsageContent += '<Users> Shows Users Online:\n'
+        self.NewUserTab.UsageContent += '\t<B3 Refresh> Manually Send User List Query\n'
+        self.NewUserTab.UsageContent += '\t<B4 To Dev>  Utility Under Development\n'
+        self.NewUserTab.UsageContent += '\t<B5 Chat With> Pick up a user to Send Chat Request\n'
+        self.NewUserTab.UsageContent += '\t<B6 Quit App> Quit this App\n\n'
+        self.NewUserTab.UsageContent += '<Chats> These Tabs shows your current chats with other users:\n'
+        self.NewUserTab.UsageContent += '\t<B7 File> Send File\n'
+        self.NewUserTab.UsageContent += '\t<B8 Voice> Send Voice\n'
+        self.NewUserTab.UsageContent += '\t<B9 To Dev> Utility Under Development\n'
+        self.NewUserTab.UsageContent += '\t<B10 Terminate> Quit Chat\n'
+        self.NewUserTab.UsageContent += '\t<B11 Send> Send Voice\n'
+
+        self.NewUserTab.Usage = tk.StringVar()
+        self.NewUserTab.Usage.set(self.NewUserTab.UsageContent)
+
+        self.NewUserTab.labelFrame_3_1 = tk.LabelFrame(self.NewUserTab, text='Usage')
+        self.NewUserTab.labelFrame_3_1.grid(row=0, column=0, padx=4, pady=4)
+
+        self.NewUserTab.label_usage = tk.Label(self.NewUserTab.labelFrame_3_1, width=48, textvariable=self.NewUserTab.Usage, anchor=tk.NW, justify='left')
+        self.NewUserTab.label_usage.grid(row=0, column=0)
 
     def CreateChatTab(self, PeerName):
         self.ChatList[PeerName] = tk.Frame()  # Later Use a class to wrap this Frame as a chat box
